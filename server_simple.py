@@ -1,8 +1,9 @@
-from flask import Flask, render_template_string, jsonify
+from flask import Flask, render_template_string, jsonify, request
 import subprocess
 import os
 import json
 import pandas as pd
+import numpy as np
 
 app = Flask(__name__)
 
@@ -152,7 +153,8 @@ HTML_TEMPLATE = """
 
         <div class="button-panel">
             <button id="runPython" onclick="runTest('python')">Run Python Version</button>
-            <button id="runC" onclick="runTest('c')">Run C Version</button>
+            <button id="runCUp" onclick="runTest('c', 'up')">상행 C Version</button>
+            <button id="runCDown" onclick="runTest('c', 'down')">하행 C Version</button>
             <button id="runRealtime" onclick="startRealtimeDebug()">Real-time Debug</button>
             <button onclick="clearStatus()">Clear</button>
         </div>
@@ -287,18 +289,34 @@ HTML_TEMPLATE = """
             }
         }
 
-        async function runTest(type) {
-            const btn = document.getElementById('run' + (type === 'python' ? 'Python' : 'C'));
+        async function runTest(type, direction = null) {
+            let btnId = 'run' + (type === 'python' ? 'Python' : 'C');
+            if (type === 'c' && direction) {
+                btnId = 'runC' + (direction === 'up' ? 'Up' : 'Down');
+            }
+            const btn = document.getElementById(btnId);
             const status = document.getElementById('status');
             const stats = document.getElementById('stats');
 
             // Disable buttons and update status
             document.querySelectorAll('button').forEach(b => b.disabled = true);
+            let directionText = direction ? ` (${direction === 'up' ? '상행' : '하행'})` : '';
             status.className = 'running';
-            status.innerHTML = '[RUNNING] Running ' + type.toUpperCase() + ' version...';
+            status.innerHTML = '[RUNNING] Running ' + type.toUpperCase() + ' version' + directionText + '...';
 
             try {
-                const response = await fetch('/run_' + type, { method: 'POST' });
+                const requestData = {};
+                if (type === 'c' && direction) {
+                    requestData.direction = direction;
+                }
+
+                const response = await fetch('/run_' + type, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
                 const data = await response.json();
 
                 if (data.success) {
@@ -508,12 +526,13 @@ HTML_TEMPLATE = """
             // Show realtime controls
             document.getElementById('realtimeControls').style.display = 'block';
 
-            // Initialize realtime session
+            // Initialize realtime session (use default 'up' direction for realtime)
             fetch('/start_realtime', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ direction: 'up' })
             })
             .then(response => response.json())
             .then(data => {
@@ -795,6 +814,7 @@ HTML_TEMPLATE = """
             document.getElementById('distanceDiff').textContent = distance.toFixed(1) + 'm';
         }
 
+
         function clearStatus() {
             document.getElementById('status').innerHTML = 'Ready...';
             document.getElementById('status').className = '';
@@ -865,9 +885,15 @@ def run_c():
         import time
         start_time = time.time()
 
-        # Run the Python test that calls C library
+        # Get direction from request
+        direction = 'up'  # default
+        if request.is_json:
+            data = request.get_json()
+            direction = data.get('direction', 'up')
+
+        # Run the Python test that calls C library with direction parameter
         result = subprocess.run(
-            ['python', 'test_c_python.py'],
+            ['python', 'test_c_python.py', '--direction', direction],
             capture_output=True,
             text=True,
             timeout=60
@@ -920,17 +946,22 @@ def run_c():
                 if len(recovery_rows) > 0:
                     paths['gps_recovery'] = [[row['eskf_lat'], row['eskf_lon']] for _, row in recovery_rows.iterrows()]
 
-        # Railway Path - 별도로 읽기
+        # Railway Path - direction에 따라 읽기
         rail_nodes = []
-        if os.path.exists('data/railway_nodes.csv'):
+        railway_file = f'data/railway_nodes_{direction}.csv'
+        if not os.path.exists(railway_file):
+            railway_file = 'data/railway_nodes.csv'  # fallback
+
+        if os.path.exists(railway_file):
             try:
-                rail_df = pd.read_csv('data/railway_nodes.csv')
+                rail_df = pd.read_csv(railway_file)
                 if 'lat' in rail_df.columns and 'lng' in rail_df.columns:
                     rail_nodes = [[row['lat'], row['lng']] for _, row in rail_df.iterrows()]
                     paths['rail'] = rail_nodes
                 elif 'lat' in rail_df.columns and 'lon' in rail_df.columns:
                     rail_nodes = [[row['lat'], row['lon']] for _, row in rail_df.iterrows()]
                     paths['rail'] = rail_nodes
+                print(f"Loaded railway visualization from {railway_file}")
             except Exception as e:
                 print(f"Warning: Could not load railway data: {e}")
 
@@ -958,6 +989,12 @@ def start_realtime():
     global realtime_session
 
     try:
+        # Get direction from request
+        direction = 'up'  # default
+        if request.is_json:
+            data = request.get_json()
+            direction = data.get('direction', 'up')
+
         # Reset session
         realtime_session = {
             'active': True,
@@ -965,12 +1002,13 @@ def start_realtime():
             'total_frames': 0,
             'data_frames': [],
             'results': [],
-            'start_time': pd.Timestamp.now()
+            'start_time': pd.Timestamp.now(),
+            'direction': direction
         }
 
-        # Run C version first to get processed data
+        # Run C version first to get processed data with direction
         result = subprocess.run(
-            ['python', 'test_c_python.py'],
+            ['python', 'test_c_python.py', '--direction', direction],
             capture_output=True,
             text=True,
             timeout=60
@@ -986,9 +1024,19 @@ def start_realtime():
         # Load C ESKF results
         c_df = pd.read_csv('eskf_c_output.csv')
 
+        # Load original data.csv to get satellites information
+        original_df = pd.read_csv('data/data.csv')
+        original_df['timestamp'] = pd.to_datetime(original_df['timestamp']).astype(np.int64) / 1e9
+
         # Use all frames from C output for complete timeline
         for i, idx in enumerate(range(len(c_df))):
             frame_data = c_df.iloc[idx]
+
+            # Find matching timestamp in original data for satellites info
+            satellites = 0
+            if i < len(original_df):
+                satellites = int(original_df.iloc[i].get('satellites', 0))
+
             realtime_session['data_frames'].append({
                 'frame_id': i,
                 'timestamp': float(frame_data['timestamp']),
@@ -996,8 +1044,8 @@ def start_realtime():
                 'gps_lng': float(frame_data['gps_raw_lon']),
                 'eskf_lat': float(frame_data['eskf_lat']),
                 'eskf_lng': float(frame_data['eskf_lon']),
-                'satellites': int(frame_data.get('imu_gyro_x', 8)),  # Use gyro as satellites proxy
-                'route_projection': bool(frame_data.get('imu_gyro_x', 8) < 0.1)  # Low gyro = stable = route projection
+                'satellites': satellites,
+                'route_projection': bool(satellites < 4)  # Low satellites = route projection active
             })
 
         realtime_session['total_frames'] = len(realtime_session['data_frames'])

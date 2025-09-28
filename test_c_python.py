@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import platform
 import os
+import argparse
 from pathlib import Path
 
 # Determine library extension based on platform
@@ -14,12 +15,19 @@ elif system == 'Darwin':
 else:
     lib_ext = '.so'
 
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='ESKF C Test with Railway Direction')
+parser.add_argument('--direction', choices=['up', 'down'], default='up',
+                   help='Railway direction: up (상행) or down (하행)')
+args = parser.parse_args()
+
 lib_path = Path(__file__).parent / f'eskf{lib_ext}'
 
 print(f"Python-C ESKF Test")
 print(f"==================")
 print(f"Platform: {system}")
 print(f"Library path: {lib_path}")
+print(f"Railway Direction: {args.direction} ({'상행' if args.direction == 'up' else '하행'})")
 
 # Check if library exists
 if not lib_path.exists():
@@ -111,16 +119,28 @@ if not eskf:
 
 print("\nESKF instance created")
 
-# Load railway nodes if available
+# Load railway nodes based on direction
 try:
-    rail_df = pd.read_csv('data/railway_nodes.csv')
+    railway_file = f'data/railway_nodes_{args.direction}.csv'
+    if not os.path.exists(railway_file):
+        # Fallback to default railway_nodes.csv
+        railway_file = 'data/railway_nodes.csv'
+        print(f"Warning: {railway_file} not found, using default railway_nodes.csv")
+
+    rail_df = pd.read_csv(railway_file)
     rail_nodes = (RailNode * len(rail_df))()
     for i, row in rail_df.iterrows():
         rail_nodes[i].lat = row['lat']
-        rail_nodes[i].lon = row['lng']
+        # Handle both 'lng' and 'lon' column names
+        if 'lng' in row:
+            rail_nodes[i].lon = row['lng']
+        elif 'lon' in row:
+            rail_nodes[i].lon = row['lon']
+        else:
+            raise ValueError("No longitude column found (expected 'lng' or 'lon')")
 
     loaded = eskf_lib.eskf_load_rail_nodes(eskf, rail_nodes, len(rail_df))
-    print(f"Loaded {loaded} railway nodes")
+    print(f"Loaded {loaded} railway nodes from {railway_file}")
 except Exception as e:
     print(f"Railway nodes not loaded: {e}")
 
