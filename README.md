@@ -123,11 +123,8 @@ work/
 ├── eskf.h              # ESKF 알고리즘 헤더
 ├── eskf.c              # ESKF 알고리즘 구현
 ├── build_with_msys2.bat # Windows 빌드 스크립트
+├── server_simple.py    # 웹 서버 실행 파일
 ├── test_c_python.py    # Python 테스트
-├── src/
-│   ├── index.ts        # TypeScript FFI 바인딩
-│   ├── test.ts         # TypeScript 테스트
-│   └── demo.ts         # TypeScript 데모
 ├── data/data.csv       # 테스트 데이터 (IMU/GPS)
 └── data/railway_nodes.csv   # 철도 맵 데이터
 ```
