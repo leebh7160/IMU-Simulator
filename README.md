@@ -129,7 +129,7 @@ work/
 │   ├── test.ts         # TypeScript 테스트
 │   └── demo.ts         # TypeScript 데모
 ├── data/data.csv       # 테스트 데이터 (IMU/GPS)
-└── railway_nodes.csv   # 철도 맵 데이터
+└── data/railway_nodes.csv   # 철도 맵 데이터
 ```
 
 ## 📚 API 문서
