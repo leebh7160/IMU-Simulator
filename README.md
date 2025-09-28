@@ -107,7 +107,7 @@ ls -la eskf.so  # 또는 eskf.dylib
 
 ### 2. 테스트
 
-data폴더에 railway_nodes.csv와 사용할 .csv를 추가한 후 
+data폴더에 railway_nodes.csv와 사용할 data.csv를 추가한 후 
 
 ```bash
 python server_simple.py
