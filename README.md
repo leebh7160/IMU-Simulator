@@ -8,7 +8,6 @@ STM32 마이크로컨트롤러용 ESKF 알고리즘의 Pure C 구현입니다. P
 - [설치](#설치)
 - [빌드](#빌드)
 - [실행](#실행)
-- [STM32 포팅](#stm32-포팅)
 - [API 문서](#api-문서)
 
 ## ✨ 기능
@@ -107,6 +106,9 @@ ls -la eskf.so  # 또는 eskf.dylib
 ```
 
 ### 2. 테스트
+
+data폴더에 railway_nodes.csv와 사용할 .csv를 추가한 후 
+
 ```bash
 python server_simple.py
 ```
@@ -126,59 +128,8 @@ work/
 │   ├── index.ts        # TypeScript FFI 바인딩
 │   ├── test.ts         # TypeScript 테스트
 │   └── demo.ts         # TypeScript 데모
-├── 3.csv               # 테스트 데이터 (IMU/GPS)
+├── data/data.csv       # 테스트 데이터 (IMU/GPS)
 └── railway_nodes.csv   # 철도 맵 데이터
-```
-
-## 🎯 STM32 포팅
-
-### 1. 파일 복사
-STM32 프로젝트에 다음 파일 추가:
-- `matrix.h`, `matrix.c`
-- `eskf.h`, `eskf.c`
-
-### 2. 설정 조정
-`eskf.h`에서 메모리 설정:
-```c
-#define MAX_RAIL_NODES 1000  // 필요에 따라 조정
-#define IMU_BUFFER_SIZE 200  // 필요에 따라 조정
-```
-
-### 3. HAL 통합 예제
-```c
-// main.c
-#include "eskf.h"
-#include "stm32f4xx_hal.h"
-
-eskf_t* eskf;
-
-void main(void) {
-    HAL_Init();
-
-    // ESKF 초기화
-    eskf = eskf_create();
-
-    while(1) {
-        // IMU 읽기 (100Hz)
-        if (imu_data_ready()) {
-            imu_data_t imu = read_imu();
-            eskf_process_imu(eskf, &imu);
-        }
-
-        // GPS 읽기 (1Hz)
-        if (gps_data_ready()) {
-            gps_data_t gps = read_gps();
-            eskf_process_gps(eskf, &gps);
-        }
-
-        // 상태 가져오기
-        eskf_state_t state;
-        eskf_get_state(eskf, &state);
-
-        // 네비게이션에 사용
-        update_navigation(state.lat, state.lon);
-    }
-}
 ```
 
 ## 📚 API 문서
