@@ -106,49 +106,11 @@ dir eskf.dll
 ls -la eskf.so  # 또는 eskf.dylib
 ```
 
-### 2. Python 테스트
+### 2. 테스트
 ```bash
-python test_c_python.py
+python server_simple.py
 ```
 
-출력 예시:
-```
-Python-C ESKF Test
-==================
-Platform: Windows
-Library loaded successfully!
-ESKF instance created
-Loaded 1234 railway nodes
-Processing 5000 data points...
-Processing complete:
-  GPS updates: 150
-  IMU updates: 4850
-  Output points: 50
-Results saved to eskf_c_output.csv
-```
-
-### 3. TypeScript 테스트 (선택사항)
-```bash
-# TypeScript 컴파일
-npm run build
-
-# 테스트 실행
-npm test
-
-# 데모 실행
-npm run demo
-```
-
-### 4. 결과 확인
-생성된 CSV 파일 확인:
-- `eskf_c_output.csv` - C 구현 출력
-- `eskf_output_ts.csv` - TypeScript 테스트 출력
-
-Python 원본과 비교:
-```bash
-python map2.py  # Python 원본 실행
-# eskf_rail_matched.html 생성됨
-```
 
 ## 📁 파일 구조
 
