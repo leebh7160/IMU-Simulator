@@ -291,7 +291,7 @@ class ImuGpsLocalizer:
 
 # Main execution
 if __name__ == "__main__":
-    df = pd.read_csv('3.csv')
+    df = pd.read_csv('data.csv')
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     print(f"Total rows: {len(df)}")
     df['has_gps'] = (df['gps_lat'].notna()) & (df['gps_lng'].notna()) & \

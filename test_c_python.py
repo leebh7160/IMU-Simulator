@@ -126,7 +126,7 @@ except Exception as e:
 
 # Load and process data
 print("\nLoading sensor data...")
-df = pd.read_csv('data/3.csv')
+df = pd.read_csv('data/data.csv')
 df['timestamp'] = pd.to_datetime(df['timestamp']).astype(np.int64) / 1e9  # Convert to seconds
 
 print(f"Processing {len(df)} data points...")
@@ -137,7 +137,7 @@ imu_count = 0
 current_gps_lat = 0
 current_gps_lon = 0
 initialization_points = []  # Store all initialization points
-# GPS recovery points from actual 3.csv data (where gps_available changes from False to True)
+# GPS recovery points from actual data.csv data (where gps_available changes from False to True)
 gps_recovery_points = [
     {'lat': 37.502775, 'lon': 126.881396},  # 첫 번째 GPS 활성화
     {'lat': 37.507768, 'lon': 126.889177},  # 터널 출구 1
@@ -199,7 +199,7 @@ for idx, row in df.iterrows():
                 initialization_points.append(init_point)
                 print(f"ESKF Initialized at: {init_point['lat']:.6f}, {init_point['lon']:.6f}")
 
-            # GPS recovery points are now pre-defined from 3.csv analysis
+            # GPS recovery points are now pre-defined from data.csv analysis
             # No need to dynamically detect them during processing
 
             last_gps_success = True

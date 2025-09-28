@@ -5,7 +5,7 @@ print("GPS 경로 분석")
 print("="*50)
 
 # GPS 데이터 로드
-df = pd.read_csv('data/3.csv')
+df = pd.read_csv('data/data.csv')
 
 # GPS 좌표가 있는 데이터만 필터링
 gps_data = df[(df['gps_available'] == True) &

@@ -30,7 +30,7 @@ try:
     seoul_lat, seoul_lon = 37.5547, 126.9706
     gwangmyeong_lat, gwangmyeong_lon = 37.4163, 126.8842
 
-    # 실제 GPS 데이터 범위 (3.csv 기준)
+    # 실제 GPS 데이터 범위 (data.csv 기준)
     data_min_lat, data_max_lat = 37.502775, 37.547443
     data_min_lon, data_max_lon = 126.881396, 126.971283
 

@@ -98,7 +98,7 @@ print("="*60)
 
 shp_file = r"C:\Users\jegil\Desktop\Work\work\data\국가기본도_철도링크\TN_RLROAD_LINK.shp"
 
-# GPS 데이터 범위 (3.csv 기준)
+# GPS 데이터 범위 (data.csv 기준)
 data_min_lat, data_max_lat = 37.502775, 37.547443
 data_min_lon, data_max_lon = 126.881396, 126.971283
 
