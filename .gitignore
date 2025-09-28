@@ -26,6 +26,7 @@ yarn-error.log
 # IDE 파일들
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 
