@@ -40,6 +40,28 @@ test_*.csv
 temp_*.csv
 debug_*.txt
 
+# 분석/개발용 스크립트들
+analyze_*.py
+extract_*.py
+check_*.py
+convert_*.py
+verify_*.py
+map2.py
+read_railway_simple.py
+
+# 출력/백업 파일들
+eskf_c_output.csv
+eskf_rail_projected.html
+libeskf.a
+GPS.txt
+TEST_RESULTS.md
+requirements.txt
+
+# 백업/개발 폴더들
+dataBackup/
+install/
+python_version/
+
 # 대용량 데이터 파일들 (필요시)
 # data/*.csv
 
