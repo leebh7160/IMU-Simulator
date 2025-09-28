@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(clang:*)",
+      "Bash(gcc:*)",
+      "Bash(where cl)",
+      "Bash(build.bat)",
+      "Bash(cmd /c:*)",
+      "Bash(npm install:*)",
+      "Bash(dir:*)",
+      "Bash(python test:*)",
+      "Bash(python:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

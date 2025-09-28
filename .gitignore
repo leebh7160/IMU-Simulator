@@ -1,0 +1,48 @@
+# 빌드 결과물
+*.dll
+*.so
+*.dylib
+*.exe
+*.o
+*.obj
+
+# 출력 파일들
+eskf_c_output.csv
+eskf_output_ts.csv
+eskf_rail_matched.html
+*.html
+
+# Python 캐시
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# IDE 파일들
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS 파일들
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 테스트/임시 파일들
+test_*.csv
+temp_*.csv
+debug_*.txt
+
+# 대용량 데이터 파일들 (필요시)
+# data/*.csv
+
+# 백업 파일들
+*~
+*.bak
+*.backup
