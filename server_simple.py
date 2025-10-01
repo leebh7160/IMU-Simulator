@@ -451,9 +451,11 @@ HTML_TEMPLATE = """
 
         // Initialize map
         window.onload = function() {
-            map = L.map('map').setView([37.5665, 126.9780], 11);
+            map = L.map('map').setView([37.5665, 126.9780], 15);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
+                attribution: '© OpenStreetMap',
+                maxZoom: 20,
+                minZoom: 8
             }).addTo(map);
 
             // ===== Phase 6: DistanceMeasurer 통합 초기화 =====

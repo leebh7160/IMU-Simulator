@@ -36,6 +36,10 @@ typedef struct {
     vec3_t acc_bias;      // Accelerometer bias
     vec3_t gyro_bias;     // Gyroscope bias
     mat15_t cov;          // 15x15 covariance matrix
+    // Euler angles for debugging (extracted from G_R_I)
+    float roll;           // Roll angle in radians
+    float pitch;          // Pitch angle in radians
+    float yaw;            // Yaw angle in radians
 } eskf_state_t;
 
 typedef struct {

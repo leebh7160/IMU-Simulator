@@ -146,7 +146,14 @@ except Exception as e:
 
 # Load and process data
 print("\nLoading sensor data...")
-df = pd.read_csv('data/data.csv')
+# Use corrected data if available, otherwise use original
+try:
+    df = pd.read_csv('data/data_corrected.csv')
+    print("Using corrected IMU data (data_corrected.csv)")
+except FileNotFoundError:
+    df = pd.read_csv('data/data.csv')
+    print("Using original IMU data (data.csv)")
+
 df['timestamp'] = pd.to_datetime(df['timestamp']).astype(np.int64) / 1e9  # Convert to seconds
 
 print(f"Processing {len(df)} data points...")
@@ -157,19 +164,14 @@ imu_count = 0
 current_gps_lat = 0
 current_gps_lon = 0
 initialization_points = []  # Store all initialization points
-# GPS recovery points from actual data.csv data (where gps_available changes from False to True)
-gps_recovery_points = [
-    {'lat': 37.502775, 'lon': 126.881396},  # 첫 번째 GPS 활성화
-    {'lat': 37.507768, 'lon': 126.889177},  # 터널 출구 1
-    {'lat': 37.515108, 'lon': 126.905960},  # 터널 출구 2
-    {'lat': 37.516718, 'lon': 126.910786},  # 터널 출구 3
-    {'lat': 37.516999, 'lon': 126.913597},  # 터널 출구 4
-    {'lat': 37.516276, 'lon': 126.919743},  # 터널 출구 5
-    {'lat': 37.514566, 'lon': 126.930007}   # 터널 출구 6
-]
-last_gps_success = False    # Track GPS status for re-initialization detection
-initialization_marked = False  # Track if we've already marked the initialization point
-consecutive_gps_failures = 0  # Count consecutive GPS failures
+# Find gps_available True -> False transitions
+print("Finding gps_available True->False transitions...")
+temp_df = pd.read_csv('data/data.csv')
+temp_df['prev_gps_available'] = temp_df['gps_available'].shift(1)
+temp_df['gps_available_loss'] = (temp_df['prev_gps_available'] == True) & (temp_df['gps_available'] == False)
+gps_loss_indices = set(temp_df[temp_df['gps_available_loss'] == True].index.tolist())
+print(f"Found {len(gps_loss_indices)} gps_available True->False transitions at indices: {list(gps_loss_indices)}")
+initialization_marked = False
 
 for idx, row in df.iterrows():
     # Process IMU
@@ -193,7 +195,7 @@ for idx, row in df.iterrows():
         gps.lat = row['gps_lat']
         gps.lon = row['gps_lng']
         gps.alt = 0
-        gps.satellites = row['satellites']  # Add satellite count
+        gps.satellites = int(row['satellites']) if not pd.isna(row['satellites']) else 0  # Add satellite count
 
         # Set identity covariance
         for i in range(3):
@@ -219,20 +221,17 @@ for idx, row in df.iterrows():
                 initialization_points.append(init_point)
                 print(f"ESKF Initialized at: {init_point['lat']:.6f}, {init_point['lon']:.6f}")
 
-            # GPS recovery points are now pre-defined from data.csv analysis
-            # No need to dynamically detect them during processing
-
-            last_gps_success = True
-            consecutive_gps_failures = 0  # Reset failure count on success
+            # GPS data processed successfully
+            pass
         else:
-            last_gps_success = False
-            consecutive_gps_failures += 1
+            # GPS processing failed but data was available
+            pass
     else:
         # No GPS data available
-        consecutive_gps_failures += 1
+        pass
 
-    # Get state periodically
-    if idx % 100 == 0:
+    # Get state periodically or at GPS loss points
+    if idx % 100 == 0 or idx in gps_loss_indices:
         state = EskfState()
         eskf_lib.eskf_get_state(eskf, ctypes.byref(state))
 
@@ -248,13 +247,8 @@ for idx, row in df.iterrows():
                 is_init = 1
                 initialization_marked = True
 
-            # Check if this point is near any GPS recovery point (wider matching for ESKF processed coordinates)
-            is_recovery = 0
-            for recovery_point in gps_recovery_points:
-                if (abs(state.lat - recovery_point['lat']) < 0.002 and
-                    abs(state.lon - recovery_point['lon']) < 0.002):
-                    is_recovery = 1
-                    break
+            # Check if this data point corresponds to a gps_available True->False transition
+            is_loss = 1 if idx in gps_loss_indices else 0
 
             results.append({
                 'timestamp': state.timestamp,
@@ -273,12 +267,13 @@ for idx, row in df.iterrows():
                 'imu_gyro_y': current_row.get('gyro_y', 0),
                 'imu_gyro_z': current_row.get('gyro_z', 0),
                 'is_initialization': is_init,
-                'is_gps_recovery': is_recovery
+                'is_gps_loss': is_loss
             })
 
 print(f"\nProcessing complete:")
 print(f"  GPS updates: {gps_count}")
 print(f"  IMU updates: {imu_count}")
+print(f"  GPS available transitions (True->False): {len(gps_loss_indices)}")
 print(f"  Output points: {len(results)}")
 
 # Save results
